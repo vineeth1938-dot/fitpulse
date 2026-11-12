@@ -34,3 +34,16 @@ AI-driven training workload, fatigue and injury-risk monitoring for amateur and 
 - Member 4 `feat/seed-data` -> `db/`, pitch deck
 - Only edit files you own. Ask the owner if you need a change elsewhere.
 - Never commit `.env` files or print API keys.
+
+## Skills roster
+**Trigger:** when the user types `FITPULSE` (any case, alone in a message), reply with the table below (all members), then ask which member they are.
+
+| Member | Role | Install and use |
+|---|---|---|
+| 1 Backend | FastAPI + ACWR engine | `superpowers` (test-driven-development, systematic-debugging, verification-before-completion), `ponytail` (smallest change), `/security-review` before every PR, `/simplify` |
+| 2 Frontend | Dashboard | `impeccable` (`npx impeccable install`, then `/impeccable init` inside `frontend/`, later `/impeccable critique` and `/impeccable polish`), `dataviz` (charts and KPI cards), `/code-review` |
+| 3 AI agents | Sarvam agents | `superpowers` (systematic-debugging, test-driven-development), `/security-review` (keys, prompt injection), `ponytail` |
+| 4 Data, QA, deck | Seed data, testing, pitch | `pptx` skill (pitch deck), `claude-mem:wowerpoint` (deck from a doc), `deep-research` (competition slide), `superpowers:verification-before-completion` (QA checklist) |
+| Everyone | | `claude-mem:handoff` (end of day), `claude-mem:mem-search` (what did we decide?), `find-skills` |
+
+Notes: `/security-review`, `/code-review`, `/simplify` are built in. Skills only apply where that person uses Claude Code; Member 2 may use v0/Cursor and Member 4 may use Claude Web.
