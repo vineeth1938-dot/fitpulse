@@ -38,12 +38,14 @@ AI-driven training workload, fatigue and injury-risk monitoring for amateur and 
 ## Skills roster
 **Trigger:** when the user types `FITPULSE` (any case, alone in a message), reply with the table below (all members), then ask which member they are.
 
-| Member | Role | Install and use |
-|---|---|---|
-| 1 Backend | FastAPI + ACWR engine | `superpowers` (test-driven-development, systematic-debugging, verification-before-completion), `ponytail` (smallest change), `/security-review` before every PR, `/simplify` |
-| 2 Frontend | Dashboard | `impeccable` (`npx impeccable install`, then `/impeccable init` inside `frontend/`, later `/impeccable critique` and `/impeccable polish`), `dataviz` (charts and KPI cards), `/code-review` |
-| 3 AI agents | Sarvam agents | `superpowers` (systematic-debugging, test-driven-development), `/security-review` (keys, prompt injection), `ponytail` |
-| 4 Data, QA, deck | Seed data, testing, pitch | `pptx` skill (pitch deck), `claude-mem:wowerpoint` (deck from a doc), `deep-research` (competition slide), `superpowers:verification-before-completion` (QA checklist) |
-| Everyone | | `claude-mem:handoff` (end of day), `claude-mem:mem-search` (what did we decide?), `find-skills` |
+Skills marked (ECC) exist only for people who installed ECC (`npx ecc-universal@2.2.3 install --target claude-project --profile developer --no-hooks`). Everything else is installed per person (see the install column).
 
-Notes: `/security-review`, `/code-review`, `/simplify` are built in. Skills only apply where that person uses Claude Code; Member 2 may use v0/Cursor and Member 4 may use Claude Web.
+| Member | Role | Use |
+|---|---|---|
+| 1 Backend (lead) | FastAPI + ACWR engine | `superpowers` (test-driven-development, systematic-debugging, verification-before-completion), `ponytail`, `/security-review` before every PR, `/simplify`; (ECC) `fastapi-patterns`, `python-patterns`, `python-testing`, `api-design`, `postgres-patterns`, `contract-first`, agents `fastapi-reviewer`, `python-reviewer`, `database-reviewer`, `security-reviewer`, `tdd-guide`, command `/build-fix`; `task-observer` (installed, not activated) |
+| 2 Frontend | Dashboard | `impeccable` (`/impeccable init` inside `frontend/`, then `critique`, `polish`), `hallmark` (`/hallmark <prompt>`, `audit <path>`), `ui-ux-pro-max`, `dataviz` (charts, KPI cards), `/code-review`; (ECC) `react-patterns`, `frontend-patterns`, `nextjs-turbopack`, `frontend-a11y`, `design-system`, `make-interfaces-feel-better`, `browser-qa`, agents `react-reviewer`, `typescript-reviewer`, `react-build-resolver` |
+| 3 AI agents | Sarvam agents | `superpowers` (systematic-debugging, test-driven-development), `ponytail`, `/security-review` (keys, prompt injection); (ECC) `error-handling`, `eval-harness`, `ai-regression-testing`, `fastapi-patterns`, agents `silent-failure-hunter`, `python-reviewer` |
+| 4 Data, QA, deck | Seed data, testing, pitch | `pptx` (pitch deck), `humanize-ppt` (deck outline + checkup; needs a renderer), `diagram-design` (architecture slide), `claude-mem:wowerpoint`, `deep-research` (competition slide), `superpowers:verification-before-completion` (QA checklist); (ECC) `frontend-slides`, `postgres-patterns`, `e2e-testing`, `browser-qa`, agent `database-reviewer` |
+| Everyone | | `claude-mem:handoff` (end of day), `claude-mem:mem-search`, `find-skills` |
+
+Notes: `/security-review`, `/code-review`, `/simplify` are built in. Skills only apply where that person uses Claude Code; Member 2 may use v0/Cursor and Member 4 may use Claude Web. The hackathon is 24 hours: keep it small.
