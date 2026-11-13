@@ -85,3 +85,14 @@ def test_parse_plan_rejects_string_drills_and_infinity():
                 '{"risk_summary":"a","deload_percentage":Infinity,"mobility_drills":["a","b","c"],"nutrition_hydration_tip":"t"}'):
         with pytest.raises(AgentError):
             _parse_plan(bad)
+
+
+def test_openapi_documents_response_models(client):
+    paths = client.get("/openapi.json").json()["paths"]
+    assert "AthleteOut" in str(paths["/athletes"]["get"]["responses"]["200"])
+    assert "AcwrDetail" in str(paths["/workouts"]["post"]["responses"]["201"])
+
+
+def test_athletes_response_keeps_frontend_fields(client):
+    a = client.get("/athletes").json()[0]
+    assert {"id", "name", "acwr", "risk_status", "acute_load", "chronic_load"} <= a.keys()
