@@ -17,6 +17,7 @@ import agents
 import coach
 import db
 from acwr import compute_acwr
+from schemas import AcwrDetail, AthleteOut, CopilotOut, InjuryChatOut, RecoveryPlanOut
 
 log = logging.getLogger("fitpulse")
 app = FastAPI(title="FitPulse")
@@ -71,32 +72,32 @@ def _all_summaries() -> list[dict]:
     return [{**a, **_summary([l for l in logs if l["athlete_id"] == a["id"]])} for a in db.list_athletes()]
 
 
-@app.get("/athletes")
+@app.get("/athletes", response_model=list[AthleteOut])
 def athletes():
     return _all_summaries()
 
 
-@app.get("/athletes/{athlete_id}/acwr")
+@app.get("/athletes/{athlete_id}/acwr", response_model=AcwrDetail)
 def athlete_acwr(athlete_id: UUID):
     _athlete_or_404(athlete_id)
     return compute_acwr(db.logs_for(str(athlete_id), date.today()), date.today())
 
 
-@app.post("/workouts", status_code=201)
+@app.post("/workouts", status_code=201, response_model=AcwrDetail)
 def add_workout(w: WorkoutIn):
     _athlete_or_404(w.athlete_id)
     db.insert_workout(w.model_dump(mode="json"))
     return compute_acwr(db.logs_for(str(w.athlete_id), date.today()), date.today())
 
 
-@app.delete("/athletes/{athlete_id}/simulated-workouts")
+@app.delete("/athletes/{athlete_id}/simulated-workouts", response_model=AcwrDetail)
 def reset_demo(athlete_id: UUID):
     _athlete_or_404(athlete_id)
     db.delete_simulated(str(athlete_id))
     return compute_acwr(db.logs_for(str(athlete_id), date.today()), date.today())
 
 
-@app.post("/athletes/{athlete_id}/recovery-plan")
+@app.post("/athletes/{athlete_id}/recovery-plan", response_model=RecoveryPlanOut)
 def recovery_plan(athlete_id: UUID):
     athlete = _athlete_or_404(athlete_id)
     logs = db.logs_for(str(athlete_id), date.today())
@@ -109,7 +110,7 @@ def recovery_plan(athlete_id: UUID):
         raise HTTPException(502, str(exc)) from exc
 
 
-@app.post("/coach-copilot")
+@app.post("/coach-copilot", response_model=CopilotOut)
 def coach_copilot(q: QuestionIn):
     try:
         return {"answer": agents.coach_answer(q.question, _all_summaries())}
@@ -117,7 +118,7 @@ def coach_copilot(q: QuestionIn):
         raise HTTPException(502, str(exc)) from exc
 
 
-@app.post("/food-analysis")
+@app.post("/food-analysis", response_model=coach.FoodAnalysis)
 async def food_analysis(image: UploadFile = File(...), goal: Literal["slim", "cut", "bulk", "healthy"] = Form(...)):
     data = await image.read(coach.MAX_IMAGE_BYTES + 1)
     if len(data) > coach.MAX_IMAGE_BYTES:
@@ -130,7 +131,7 @@ async def food_analysis(image: UploadFile = File(...), goal: Literal["slim", "cu
         raise HTTPException(502, str(exc)) from exc
 
 
-@app.post("/injury-chat")
+@app.post("/injury-chat", response_model=InjuryChatOut)
 def injury_chat(body: InjuryChatIn):
     msgs = [m.model_dump() for m in body.messages]
     if msgs[-1]["role"] != "user":
