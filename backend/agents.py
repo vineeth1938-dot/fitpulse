@@ -32,14 +32,19 @@ class AgentError(RuntimeError):
 
 
 def _chat(system: str, user: str) -> str:
+    return _chat_messages(system, [{"role": "user", "content": user}])
+
+
+def _chat_messages(system: str, messages: list[dict]) -> str:
     key = os.getenv("SARVAM_API_KEY")
     if not key:
-        raise AgentError("SARVAM_API_KEY is not set")
+        log.error("SARVAM_API_KEY is not set")
+        raise AgentError("AI service unavailable")
     try:
         resp = SarvamAI(api_subscription_key=key).chat.completions(
             model=MODEL, max_tokens=MAX_TOKENS, temperature=0.3, reasoning_effort="low",
             request_options={"timeout_in_seconds": REQUEST_TIMEOUT_S},
-            messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
+            messages=[{"role": "system", "content": system}, *messages],
         )
     except Exception as exc:  # SDK raises many types; log detail, return a generic error
         log.exception("Sarvam call failed")

@@ -9,6 +9,8 @@ import { LogWorkoutForm } from "@/components/LogWorkoutForm";
 import { RecoveryPlanPanel } from "@/components/RecoveryPlanPanel";
 import { CorridorChart } from "@/components/CorridorChart";
 import { SimulateButton } from "@/components/SimulateButton";
+import { FoodCoach } from "@/components/FoodCoach";
+import { InjuryChat } from "@/components/InjuryChat";
 import { CoachCopilot } from "@/components/CoachCopilot";
 
 const PRIORITY_DEMO = "22222222-2222-2222-2222-222222222222";
@@ -100,6 +102,8 @@ export default function Dashboard() {
           <div className="space-y-6">
             <Panel title="48h deload plan"><RecoveryPlanPanel key={selected.id} athleteId={selected.id} trigger={planTrigger} /></Panel>
             <Panel title="Coach copilot"><CoachCopilot /></Panel>
+            <Panel title="Food photo coach"><FoodCoach key={selected.id} /></Panel>
+            <Panel title="Injury prevention chat"><InjuryChat key={selected.id} /></Panel>
           </div>
         </div>
       )}

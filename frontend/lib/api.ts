@@ -39,3 +39,25 @@ export const askCopilot = (question: string) =>
 export const SIMULATED_NOTE = "Simulated brutal practice"; // must match backend db.SIMULATED_NOTE
 export const resetDemo = (id: string) =>
   call<AcwrDetail>(`/athletes/${id}/simulated-workouts`, { method: "DELETE" });
+
+export type Goal = "slim" | "cut" | "bulk" | "healthy";
+export interface FoodAnalysis {
+  foods: { name: string; grams?: number | null; calories: number }[]; total_calories: number;
+  protein_g: number; carbs_g: number; fat_g: number; goal_advice: string;
+  workout_plan: { activity: string; minutes: number; calories_burned: number }[]; disclaimer: string;
+}
+export interface ChatTurn { role: "user" | "assistant"; content: string }
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+
+export async function analyzeFood(image: File, goal: Goal): Promise<FoodAnalysis> {
+  const body = new FormData(); // no JSON header: the browser sets the multipart boundary
+  body.append("image", image); body.append("goal", goal);
+  const res = await fetch(`${API}/food-analysis`, { method: "POST", body, signal: AbortSignal.timeout(120_000) });
+  if (!res.ok) {
+    const detail = await res.json().then((b) => b.detail).catch(() => null);
+    throw new Error(typeof detail === "string" ? detail : `Request failed (${res.status})`);
+  }
+  return res.json();
+}
+export const injuryChat = (messages: ChatTurn[]) =>
+  call<{ reply: string; questions_asked: number; done: boolean }>("/injury-chat", { method: "POST", body: JSON.stringify({ messages }) });
