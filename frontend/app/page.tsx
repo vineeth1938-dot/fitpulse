@@ -47,6 +47,7 @@ function Dashboard({ email }: { email: string }) {
   const [settingUp, setSettingUp] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [removing, setRemoving] = useState(false);
+  const [confirmingRemove, setConfirmingRemove] = useState(false); // in-page confirmation: browser pop-ups are blocked in some webviews
   const [notice, setNotice] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
@@ -81,7 +82,7 @@ function Dashboard({ email }: { email: string }) {
   }, []);
 
   async function removeDemo() {
-    if (!window.confirm("Remove the demo athletes and their sessions? Athletes you added yourself stay.")) return;
+    setConfirmingRemove(false);
     setRemoving(true); setNotice(null);
     try {
       if (!supabase) throw new Error("You are not signed in");
@@ -137,12 +138,21 @@ function Dashboard({ email }: { email: string }) {
 
       <div className="flex flex-wrap items-start gap-3">
         <AddAthlete onAdded={(a) => { setNotice(null); setSelectedId(a.id); setDetail(null); setPlanTrigger(0); void refresh(); }} />
-        {athletes.some((a) => a.is_demo) && (
-          <button type="button" disabled={removing} onClick={() => void removeDemo()}
+        {athletes.some((a) => a.is_demo) && (confirmingRemove ? (
+          <div role="group" aria-label="Confirm removing the demo athletes"
+            className="flex flex-wrap items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2">
+            <p className="text-sm text-red-900">Remove the demo athletes and their sessions? Athletes you added stay.</p>
+            <button type="button" autoFocus onClick={() => void removeDemo()}
+              className="rounded-lg bg-red-700 px-3 py-1.5 text-sm font-semibold text-white hover:bg-red-800">Yes, remove</button>
+            <button type="button" onClick={() => setConfirmingRemove(false)}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 hover:bg-slate-100">Cancel</button>
+          </div>
+        ) : (
+          <button type="button" disabled={removing} onClick={() => setConfirmingRemove(true)}
             className="disabled:opacity-60 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100">
             {removing ? "Removing…" : "Remove demo athletes"}
           </button>
-        )}
+        ))}
       </div>
       {notice && <p role="status" className="text-sm text-slate-700">{notice}</p>}
       {loaded && !settingUp && athletes.length === 0 && !error && (
