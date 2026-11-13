@@ -1,0 +1,61 @@
+-- FitPulse seed data (3 showcase athletes). Dates are relative to today.
+-- Run db/schema.sql first. Safe to re-run: it clears these 3 athletes first.
+
+delete from workout_logs where athlete_id in ('11111111-1111-1111-1111-111111111111','22222222-2222-2222-2222-222222222222','33333333-3333-3333-3333-333333333333');
+delete from athletes where id in ('11111111-1111-1111-1111-111111111111','22222222-2222-2222-2222-222222222222','33333333-3333-3333-3333-333333333333');
+
+insert into athletes (id, name, sport, position, resting_hr) values
+  ('11111111-1111-1111-1111-111111111111', 'Aarav Sharma', 'Track & Field', '400m Sprinter', 58),
+  ('22222222-2222-2222-2222-222222222222', 'Priya Nair', 'Football', 'Midfielder', 52),
+  ('33333333-3333-3333-3333-333333333333', 'Rohan Verma', 'Basketball', 'Point Guard', 64);
+
+insert into workout_logs (athlete_id, session_date, duration_mins, rpe, sleep_hours, notes) values
+  ('11111111-1111-1111-1111-111111111111', current_date - 26, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 25, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 23, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 21, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 19, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 18, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 16, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 14, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 12, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 11, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 9, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 7, 45, 5, 7.5, 'Base training'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 5, 55, 5, 5.5, 'Sprint + plyometric block'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 4, 60, 7, 5.5, 'Sprint + plyometric block'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 2, 60, 7, 5.5, 'Sprint + plyometric block'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 1, 60, 7, 5.5, 'Sprint + plyometric block'),
+  ('11111111-1111-1111-1111-111111111111', current_date - 0, 60, 7, 5.5, 'Sprint + plyometric block'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 26, 60, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 24, 60, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 22, 60, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 19, 60, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 17, 60, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 15, 60, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 12, 60, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 10, 60, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 8, 60, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 5, 65, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 3, 65, 6, 8.0, 'Steady football training'),
+  ('22222222-2222-2222-2222-222222222222', current_date - 1, 65, 6, 8.0, 'Steady football training'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 27, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 26, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 24, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 22, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 21, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 20, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 19, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 17, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 15, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 14, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 13, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 12, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 10, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 8, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 7, 50, 7, 5.5, 'Practice + conditioning'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 5, 60, 9, 5.0, 'High-intensity scrimmage'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 4, 60, 9, 5.0, 'High-intensity scrimmage'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 2, 60, 9, 5.0, 'High-intensity scrimmage'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 1, 60, 9, 5.0, 'High-intensity scrimmage'),
+  ('33333333-3333-3333-3333-333333333333', current_date - 0, 60, 9, 5.0, 'High-intensity scrimmage');
