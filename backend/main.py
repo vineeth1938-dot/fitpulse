@@ -2,16 +2,19 @@
 import logging
 import os
 from datetime import date
+from typing import Literal
 from uuid import UUID
 
 import httpx
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile
 from fastapi.responses import JSONResponse
 from postgrest.exceptions import APIError
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from starlette.concurrency import run_in_threadpool
 
 import agents
+import coach
 import db
 from acwr import compute_acwr
 
@@ -36,6 +39,15 @@ class WorkoutIn(BaseModel):
     rpe: int = Field(ge=1, le=10)
     sleep_hours: float | None = Field(default=None, ge=0, le=24)
     notes: str | None = Field(default=None, max_length=500)
+
+
+class ChatMessage(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(min_length=1, max_length=1000)
+
+
+class InjuryChatIn(BaseModel):
+    messages: list[ChatMessage] = Field(min_length=1, max_length=20)
 
 
 class QuestionIn(BaseModel):
@@ -101,5 +113,29 @@ def recovery_plan(athlete_id: UUID):
 def coach_copilot(q: QuestionIn):
     try:
         return {"answer": agents.coach_answer(q.question, _all_summaries())}
+    except agents.AgentError as exc:
+        raise HTTPException(502, str(exc)) from exc
+
+
+@app.post("/food-analysis")
+async def food_analysis(image: UploadFile = File(...), goal: Literal["slim", "cut", "bulk", "healthy"] = Form(...)):
+    data = await image.read(coach.MAX_IMAGE_BYTES + 1)
+    if len(data) > coach.MAX_IMAGE_BYTES:
+        raise HTTPException(413, "Image must be under 5 MB")
+    if not coach.is_image(data):
+        raise HTTPException(415, "Upload a JPEG, PNG or WebP image")
+    try:
+        return await run_in_threadpool(coach.analyze_food, data, goal)  # blocking Gemini call: keep the event loop free
+    except agents.AgentError as exc:
+        raise HTTPException(502, str(exc)) from exc
+
+
+@app.post("/injury-chat")
+def injury_chat(body: InjuryChatIn):
+    msgs = [m.model_dump() for m in body.messages]
+    if msgs[-1]["role"] != "user":
+        raise HTTPException(422, "The last message must be from the user")
+    try:
+        return coach.injury_chat(msgs)
     except agents.AgentError as exc:
         raise HTTPException(502, str(exc)) from exc
