@@ -47,3 +47,7 @@ class InjuryChatOut(BaseModel):
     reply: str
     questions_asked: int
     done: bool
+
+
+class DemoRosterOut(BaseModel):
+    created: int

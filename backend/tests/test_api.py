@@ -7,19 +7,6 @@ import db
 import main
 
 AID = "22222222-2222-2222-2222-222222222222"
-ATHLETE = {"id": AID, "name": "Priya Nair", "sport": "Football", "position": "Midfielder"}
-
-
-@pytest.fixture
-def client(monkeypatch):
-    logs = [{"athlete_id": AID, "session_date": (date.today() - timedelta(days=i)).isoformat(),
-             "duration_mins": 60, "rpe": 6, "sleep_hours": 8.0} for i in range(0, 28, 2)]
-    monkeypatch.setattr(db, "list_athletes", lambda: [ATHLETE])
-    monkeypatch.setattr(db, "get_athlete", lambda i: ATHLETE if i == AID else None)
-    monkeypatch.setattr(db, "all_logs", lambda t: logs)
-    monkeypatch.setattr(db, "logs_for", lambda i, t: logs)
-    monkeypatch.setattr(db, "insert_workout", lambda row: row)
-    return TestClient(main.app)
 
 
 def test_athletes_include_acwr(client):
@@ -73,8 +60,8 @@ def test_reset_unknown_athlete_404(client):
 
 
 def test_database_failure_is_503_not_500(client, monkeypatch):
-    def boom():
-        raise RuntimeError("db down")
+    def boom(*a):
+        raise db.DatabaseError("db down")
     monkeypatch.setattr(db, "list_athletes", boom)
     assert TestClient(main.app, raise_server_exceptions=False).get("/athletes").status_code == 503
 

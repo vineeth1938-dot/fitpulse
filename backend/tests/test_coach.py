@@ -13,11 +13,6 @@ FOOD = {"foods": [{"name": "Rice", "calories": 200}, {"name": "Dal", "calories":
         "workout_plan": [{"activity": "Brisk walk", "minutes": 30, "calories_burned": 150}]}
 
 
-@pytest.fixture
-def client():
-    return TestClient(main.app)
-
-
 def post_food(client, data=JPEG, ctype="image/jpeg", goal="cut"):
     return client.post("/food-analysis", data={"goal": goal}, files={"image": ("meal.jpg", io.BytesIO(data), ctype)})
 
