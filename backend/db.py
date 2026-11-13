@@ -2,6 +2,7 @@
 import os
 from datetime import date, timedelta
 
+import httpx
 from dotenv import load_dotenv
 from supabase import Client, create_client
 
@@ -60,6 +61,23 @@ def all_logs(today: date, athlete_ids: list[str]) -> list[dict]:
             return rows
 
 
+MAX_ATHLETES = 50  # per coach
+
+
+def insert_athlete(coach_id: str, data: dict) -> dict:
+    rows = client().table("athletes").insert({**data, "coach_id": coach_id}).execute().data
+    if not rows:
+        raise DatabaseError("Insert returned no row")
+    return rows[0]
+
+
+def delete_demo_athletes(coach_id: str) -> int:
+    """Remove this coach's copies of the demo squad (their sessions go with them). Own athletes are kept."""
+    rows = (client().table("athletes").delete().eq("coach_id", coach_id).not_.is_("template_id", "null")
+            .execute().data)
+    return len(rows)
+
+
 SIMULATED_NOTE = "Simulated brutal practice"
 
 
@@ -77,5 +95,13 @@ def insert_workout(row: dict) -> dict:
 def clone_demo_roster(coach_id: str, today: date) -> int:
     """Give a coach their own copy of the demo squad in one database transaction (see db/migrations/001_auth.sql).
     Returns how many athletes the coach owns afterwards, or 0 if they already had some."""
-    data = client().rpc("clone_demo_roster", {"p_coach": coach_id, "p_today": today.isoformat()}).execute().data
-    return int(data or 0)
+    for attempt in (1, 2):
+        try:
+            data = client().rpc("clone_demo_roster", {"p_coach": coach_id, "p_today": today.isoformat()}).execute().data
+            return int(data or 0)
+        except httpx.TransportError:
+            # A dropped connection. Safe to repeat: the function does nothing if the squad already exists, so if the
+            # first attempt did work, the retry just returns 0.
+            if attempt == 2:
+                raise
+    return 0

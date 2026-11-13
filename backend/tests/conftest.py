@@ -2,6 +2,7 @@
 from datetime import date, timedelta
 
 import base64
+from uuid import uuid4
 import json
 import time
 
@@ -57,6 +58,18 @@ class FakeDB:
     def delete_simulated(self, athlete_id):
         self.logs = [l for l in self.logs if not (l["athlete_id"] == athlete_id and l.get("notes") == db.SIMULATED_NOTE)]
 
+    def insert_athlete(self, coach_id, data):
+        row = {"id": str(uuid4()), "sport": None, "position": None, "resting_hr": None, **data,
+               "coach_id": coach_id, "template_id": None}
+        self.athletes.append(row)
+        return row
+
+    def delete_demo_athletes(self, coach_id):
+        gone = {a["id"] for a in self.athletes if a["coach_id"] == coach_id and a["template_id"]}
+        self.athletes = [a for a in self.athletes if a["id"] not in gone]
+        self.logs = [l for l in self.logs if l["athlete_id"] not in gone]  # the real database cascades
+        return len(gone)
+
     def clone_demo_roster(self, coach_id, today):
         if any(a["coach_id"] == coach_id and a["template_id"] for a in self.athletes):
             return 0  # the real unique index makes a second clone fail
@@ -76,7 +89,7 @@ class FakeDB:
 @pytest.fixture
 def store(monkeypatch):
     fake = FakeDB()
-    for name in ("list_athletes", "get_athlete", "all_logs", "logs_for", "insert_workout", "delete_simulated", "clone_demo_roster"):
+    for name in ("list_athletes", "get_athlete", "all_logs", "logs_for", "insert_workout", "delete_simulated", "clone_demo_roster", "insert_athlete", "delete_demo_athletes"):
         monkeypatch.setattr(db, name, getattr(fake, name))
     auth.reset_state()
     yield fake

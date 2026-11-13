@@ -1,10 +1,11 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Activity } from "lucide-react";
-import { createDemoRoster, getAcwr, getAthletes, type AcwrDetail, type Athlete } from "@/lib/api";
+import { createDemoRoster, getAcwr, getAthletes, removeDemoAthletes, type AcwrDetail, type Athlete } from "@/lib/api";
 import { RISK } from "@/lib/risk";
 import { supabase } from "@/lib/supabase";
 import { AuthGate } from "@/components/AuthGate";
+import { AddAthlete } from "@/components/AddAthlete";
 import { AthleteCard } from "@/components/AthleteCard";
 import { TrendChart } from "@/components/TrendChart";
 import { LogWorkoutForm } from "@/components/LogWorkoutForm";
@@ -22,6 +23,14 @@ const Panel = ({ title, children }: { title: string; children: React.ReactNode }
   </section>
 );
 
+// Set when the user removes the demo squad, so it is not recreated next time the roster is empty.
+async function demoRemoved(): Promise<boolean> {
+  if (!supabase) return false;
+  const { data, error } = await supabase.auth.getUser();
+  if (error) throw error; // unknown is not "false": never re-create a squad the user removed
+  return data.user?.user_metadata?.demo_removed === true;
+}
+
 export default function Page() {
   return <AuthGate>{(email) => <Dashboard email={email} />}</AuthGate>;
 }
@@ -33,30 +42,59 @@ function Dashboard({ email }: { email: string }) {
   const [error, setError] = useState<string | null>(null);
   const [planTrigger, setPlanTrigger] = useState(0);
   const selectedRef = useRef<string | null>(null);
-  const seeding = useRef(false);
+  const seedInFlight = useRef(false);
+  const requestId = useRef(0); // only the newest refresh may update the screen
   const [settingUp, setSettingUp] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [removing, setRemoving] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    const id = ++requestId.current;
+    let seeded = false; // this refresh created the squad, so its answer is the freshest even if a twin refresh started later
     try {
       let list = await getAthletes();
-      if (list.length === 0 && !seeding.current) { // first sign-in: copy the demo squad into this account
-        seeding.current = true; // stops React StrictMode's double effect; the server is idempotent anyway
-        setSettingUp(true);
+      if (list.length === 0) { // first sign-in: copy the demo squad into this account
+        if (seedInFlight.current) return; // React StrictMode's twin refresh: the first one is creating it and will update the screen
+        seedInFlight.current = true;
         try {
-          await createDemoRoster();
-          list = await getAthletes();
-        } catch (e) {
-          seeding.current = false; // allow a retry on the next refresh
-          throw e;
+          if (!(await demoRemoved())) {
+            seeded = true;
+            setSettingUp(true);
+            try { await createDemoRoster(); } catch { /* the squad may exist even if the answer was lost: check below */ }
+            list = await getAthletes();
+            if (list.length === 0) throw new Error("Could not set up the demo squad. Please reload the page.");
+          }
         } finally {
+          seedInFlight.current = false;
           setSettingUp(false);
         }
       }
+      if (!seeded && id !== requestId.current) return; // a newer refresh has started; its answer wins
       setAthletes(list);
-      setSelectedId((cur) => cur ?? list.find((a) => a.name === DEMO_ATHLETE)?.id ?? list[0]?.id ?? null);
+      setSelectedId((cur) => (cur && list.some((a) => a.id === cur) ? cur : list.find((a) => a.name === DEMO_ATHLETE)?.id ?? list[0]?.id ?? null));
       setError(null);
-    } catch (e) { setError(e instanceof Error ? e.message : "Cannot reach the API"); }
+    } catch (e) {
+      if (seeded || id === requestId.current) setError(e instanceof Error ? e.message : "Cannot reach the API");
+    }
+    if (seeded || id === requestId.current) setLoaded(true);
   }, []);
+
+  async function removeDemo() {
+    if (!window.confirm("Remove the demo athletes and their sessions? Athletes you added yourself stay.")) return;
+    setRemoving(true); setNotice(null);
+    try {
+      if (!supabase) throw new Error("You are not signed in");
+      // Remember the choice first, so an empty roster does not bring the demo squad back.
+      const { error: saveError } = await supabase.auth.updateUser({ data: { demo_removed: true } });
+      if (saveError) throw saveError;
+      const { deleted } = await removeDemoAthletes();
+      if (athletes.find((a) => a.id === selectedId)?.is_demo) setDetail(null);
+      await refresh();
+      setNotice(`Removed ${deleted} demo athletes.`);
+    } catch (e) { setError(e instanceof Error ? e.message : "Could not remove the demo athletes"); }
+    finally { setRemoving(false); }
+  }
 
   useEffect(() => { selectedRef.current = selectedId; }, [selectedId]);
   useEffect(() => { refresh(); }, [refresh]);
@@ -96,6 +134,20 @@ function Dashboard({ email }: { email: string }) {
           </li>
         ))}
       </ul>
+
+      <div className="flex flex-wrap items-start gap-3">
+        <AddAthlete onAdded={(a) => { setNotice(null); setSelectedId(a.id); setDetail(null); setPlanTrigger(0); void refresh(); }} />
+        {athletes.some((a) => a.is_demo) && (
+          <button type="button" disabled={removing} onClick={() => void removeDemo()}
+            className="disabled:opacity-60 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-800 hover:bg-slate-100">
+            {removing ? "Removing…" : "Remove demo athletes"}
+          </button>
+        )}
+      </div>
+      {notice && <p role="status" className="text-sm text-slate-700">{notice}</p>}
+      {loaded && !settingUp && athletes.length === 0 && !error && (
+        <p role="status" className="text-sm text-slate-700">No athletes yet. Click Add athlete to create your first one.</p>
+      )}
 
       {selected && (
         <div className="grid gap-6 lg:grid-cols-3">
