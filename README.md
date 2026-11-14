@@ -2,11 +2,9 @@
 
 AI-driven training load, fatigue and injury-risk monitoring for amateur and student athletes.
 
-## Live demo
+**Live demo: https://fitpulse-sigma-eight.vercel.app**
 
-**https://fitpulse-sigma-eight.vercel.app**
-
-Create an account on the sign-in page (any email, a password of 8 or more characters). You start with 10 demo athletes, so you can try everything straight away. The server sleeps when it has not been used for a while, so the first sign-in can take up to a minute.
+Create an account on the sign-in page (any email, a password of 8 or more characters) and you start with 10 demo athletes. The server sleeps when it has not been used for a while, so the first sign-in can take up to a minute.
 
 Coaches log each session (minutes and effort), and FitPulse turns it into an **Acute:Chronic Workload Ratio (ACWR)** per athlete, flags injury risk early, and uses AI to coach recovery, nutrition and injury prevention. No wearables or GPS vests are needed.
 
