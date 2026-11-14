@@ -26,6 +26,7 @@ class AcwrDetail(AcwrSummary):
 
 class AthleteOut(AcwrSummary):
     id: str
+    is_demo: bool = False  # a copy of the demo squad, removable in one click
     name: str
     sport: str | None = None
     position: str | None = None
@@ -51,3 +52,7 @@ class InjuryChatOut(BaseModel):
 
 class DemoRosterOut(BaseModel):
     created: int
+
+
+class DeletedOut(BaseModel):
+    deleted: int

@@ -2,7 +2,7 @@
 import logging
 import os
 from datetime import date
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
 import httpx
@@ -10,7 +10,7 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.responses import JSONResponse
 from postgrest.exceptions import APIError
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, StringConstraints
 from starlette.concurrency import run_in_threadpool
 
 import agents
@@ -18,7 +18,7 @@ import coach
 import db
 from acwr import compute_acwr
 from auth import current_user, rate_limit
-from schemas import AcwrDetail, AthleteOut, CopilotOut, DemoRosterOut, InjuryChatOut, RecoveryPlanOut
+from schemas import AcwrDetail, AthleteOut, CopilotOut, DeletedOut, DemoRosterOut, InjuryChatOut, RecoveryPlanOut
 
 log = logging.getLogger("fitpulse")
 app = FastAPI(title="FitPulse")
@@ -44,6 +44,16 @@ class WorkoutIn(BaseModel):
     rpe: int = Field(ge=1, le=10)
     sleep_hours: float | None = Field(default=None, ge=0, le=24)
     notes: str | None = Field(default=None, max_length=500)
+
+
+Short = Annotated[str, StringConstraints(strip_whitespace=True, max_length=40)]
+
+
+class AthleteIn(BaseModel):
+    name: Annotated[str, StringConstraints(strip_whitespace=True, min_length=1, max_length=60)]
+    sport: Short | None = None
+    position: Short | None = None
+    resting_hr: int | None = Field(default=None, ge=25, le=120)
 
 
 class ChatMessage(BaseModel):
@@ -74,7 +84,8 @@ def _summary(logs: list[dict]) -> dict:
 def _all_summaries(owner: str) -> list[dict]:
     athletes = db.list_athletes(owner)
     logs = db.all_logs(date.today(), [a["id"] for a in athletes])
-    return [{**a, **_summary([l for l in logs if l["athlete_id"] == a["id"]])} for a in athletes]
+    return [{**a, "is_demo": a.get("template_id") is not None, **_summary([l for l in logs if l["athlete_id"] == a["id"]])}
+            for a in athletes]
 
 
 @app.get("/health")
@@ -86,6 +97,19 @@ def health():
 @app.get("/athletes", response_model=list[AthleteOut], dependencies=[STD])
 def athletes(owner: str = Depends(current_user)):
     return _all_summaries(owner)
+
+
+@app.post("/athletes", status_code=201, response_model=AthleteOut, dependencies=[STD])
+def add_athlete(a: AthleteIn, owner: str = Depends(current_user)):
+    if len(db.list_athletes(owner)) >= db.MAX_ATHLETES:
+        raise HTTPException(400, f"You can have at most {db.MAX_ATHLETES} athletes")
+    row = db.insert_athlete(owner, a.model_dump())
+    return {**row, "is_demo": False, **_summary([])}
+
+
+@app.delete("/demo-athletes", response_model=DeletedOut, dependencies=[STD])
+def remove_demo_athletes(owner: str = Depends(current_user)):
+    return {"deleted": db.delete_demo_athletes(owner)}
 
 
 @app.post("/demo-roster", response_model=DemoRosterOut, dependencies=[STD])

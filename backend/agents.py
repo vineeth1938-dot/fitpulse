@@ -11,8 +11,10 @@ load_dotenv()
 log = logging.getLogger("fitpulse.agents")
 
 MODEL = "sarvam-105b"
-REQUEST_TIMEOUT_S = 90
-MAX_TOKENS = 3000  # reasoning model: <1500 returns content=None
+REQUEST_TIMEOUT_S = 75  # normal answers take 15 to 45 s; a request that hangs is cut off and tried once more
+# The model "thinks" before it answers, and that thinking counts against the limit. Measured use is 1,100 to 2,600
+# tokens, and some athletes go past 3,000, which left an empty answer. Retry once with double the room.
+TOKEN_BUDGETS = (8000, 16000)
 
 PLAN_SYSTEM = (
     "You are a sports-science assistant for amateur athletes. The plan covers the next 48 hours of reduced training. Reply with ONLY a JSON object with keys: "
@@ -40,20 +42,31 @@ def _chat_messages(system: str, messages: list[dict]) -> str:
     if not key:
         log.error("SARVAM_API_KEY is not set")
         raise AgentError("AI service unavailable")
-    try:
-        resp = SarvamAI(api_subscription_key=key).chat.completions(
-            model=MODEL, max_tokens=MAX_TOKENS, temperature=0.3, reasoning_effort="low",
-            request_options={"timeout_in_seconds": REQUEST_TIMEOUT_S},
-            messages=[{"role": "system", "content": system}, *messages],
-        )
-    except Exception as exc:  # SDK raises many types; log detail, return a generic error
-        log.exception("Sarvam call failed")
-        raise AgentError("AI service unavailable") from exc
-    content = resp.choices[0].message.content
-    if not content:
-        log.error("Sarvam returned empty content (finish_reason=%s)", resp.choices[0].finish_reason)
-        raise AgentError("AI returned an empty answer")
-    return content.strip()
+    client = SarvamAI(api_subscription_key=key)
+    for budget in TOKEN_BUDGETS:
+        choice = _complete(client, budget, system, messages)
+        if choice.message.content:
+            return choice.message.content.strip()
+        log.warning("Sarvam returned empty content (finish_reason=%s, max_tokens=%s)", choice.finish_reason, budget)
+        if choice.finish_reason != "length":
+            break  # more room will not help
+    raise AgentError("AI returned an empty answer")
+
+
+def _complete(client, budget: int, system: str, messages: list[dict]):
+    """One model call. A hung or failed request is tried once more before giving up."""
+    for attempt in (1, 2):
+        try:
+            resp = client.chat.completions(
+                model=MODEL, max_tokens=budget, temperature=0.3, reasoning_effort="low",
+                request_options={"timeout_in_seconds": REQUEST_TIMEOUT_S},
+                messages=[{"role": "system", "content": system}, *messages],
+            )
+            return resp.choices[0]
+        except Exception as exc:  # SDK raises many types; log detail, return a generic error
+            log.warning("Sarvam call failed (attempt %s)", attempt, exc_info=True)
+            if attempt == 2:
+                raise AgentError("AI service unavailable") from exc
 
 
 def _parse_plan(text: str) -> dict:

@@ -6,7 +6,7 @@ export const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
 
 export type Risk = "Safe" | "Caution" | "Danger" | "Undertraining";
 export interface Athlete {
-  id: string; name: string; sport: string | null; position: string | null;
+  id: string; name: string; sport: string | null; position: string | null; is_demo: boolean;
   acute_load: number; chronic_load: number; acwr: number; risk_status: Risk;
 }
 export interface TrendPoint { date: string; acute_load: number; chronic_load: number; acwr: number | null }
@@ -85,3 +85,7 @@ export async function analyzeFood(image: File, goal: Goal): Promise<FoodAnalysis
 export const injuryChat = (messages: ChatTurn[]) =>
   call<{ reply: string; questions_asked: number; done: boolean }>("/injury-chat", { method: "POST", body: JSON.stringify({ messages }) });
 export const createDemoRoster = () => call<{ created: number }>("/demo-roster", { method: "POST" });
+
+export interface AthleteInput { name: string; sport?: string; position?: string; resting_hr?: number }
+export const createAthlete = (a: AthleteInput) => call<Athlete>("/athletes", { method: "POST", body: JSON.stringify(a) });
+export const removeDemoAthletes = () => call<{ deleted: number }>("/demo-athletes", { method: "DELETE" });
